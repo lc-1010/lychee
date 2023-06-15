@@ -17,6 +17,17 @@ type node struct {
 	paramChild  *node
 	contextFunc ContextFunc //context
 }
+type matchNode struct {
+	node  *node
+	param map[string]string
+}
+
+func (m *matchNode) addValue(key string, value string) {
+	if m.param == nil {
+		m.param = map[string]string{key: value}
+	}
+	m.param[key] = value
+}
 
 func NewRouter() router {
 	return router{
@@ -38,8 +49,8 @@ func (r *router) addRoute(method string, path string, cfunc ContextFunc) {
 		return
 	}
 
-	str := path[1:] // /user/info  user/info
-	segs := strings.Split(str, "/")
+	// /user/info  user/info
+	segs := strings.Split(path[1:], "/")
 	for _, seg := range segs {
 		if seg == "" {
 			panic(errs.ErrRouterInvalid)
@@ -50,7 +61,7 @@ func (r *router) addRoute(method string, path string, cfunc ContextFunc) {
 		panic(errs.ErrRouterExisit)
 	}
 	root.contextFunc = cfunc
-	root.path = path
+	root.route = path
 
 }
 
@@ -88,4 +99,46 @@ func checkRoute(path string) string {
 		panic(errs.ErrRouterEndWithSlash)
 	}
 	return path
+}
+
+// findRouter retrun route node
+func (r *router) findRouter(method string, path string) (*matchNode, bool) {
+	node, ok := r.treeBranch[method]
+	res := &matchNode{}
+	if !ok {
+		return nil, false
+	}
+	if path == "/" {
+		res.node = node
+		return res, true
+	}
+	segs := strings.Split(strings.Trim(path, "/"), "/")
+	for _, s := range segs {
+		var isParam bool
+		node, isParam, ok = node.child(s)
+		if !ok {
+			return nil, false
+		}
+		if isParam {
+			res.addValue(node.path[1:], s)
+		}
+	}
+	res.node = node
+	return res, true
+}
+
+// child
+func (n *node) child(path string) (*node, bool, bool) {
+	if n.children == nil {
+		if n.paramChild != nil {
+			return n.paramChild, true, true
+		}
+	}
+	res, ok := n.children[path]
+	if !ok {
+		if n.paramChild != nil {
+			return n.paramChild, true, true
+		}
+	}
+	return res, false, true
 }

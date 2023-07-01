@@ -46,6 +46,7 @@ func (r *router) addRoute(method string, path string, cfunc ContextFunc) {
 			panic(errs.ErrRouterHadRoot)
 		}
 		root.contextFunc = cfunc
+		//root.route = path
 		return
 	}
 

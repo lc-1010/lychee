@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-type Context struct {
+type LyContext struct {
 	Resp     http.ResponseWriter
 	Req      *http.Request
 	RespCode int
@@ -16,4 +16,4 @@ type Context struct {
 	urlQuery url.Values
 }
 
-type ContextFunc func(ctx *Context)
+type ContextFunc func(ctx *LyContext)
